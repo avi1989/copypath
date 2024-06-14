@@ -1,0 +1,66 @@
+#!/bin/sh
+
+print_documentation() {
+    BOLD=$(tput bold)
+    RESET=$(tput sgr0)
+
+    echo "Copies the path of the selected file into the system clipboard
+
+    Usage: copypath [OPTIONS] [FILE]
+
+    ${BOLD}Arguments:${RESET}
+     [FILE]...  [default: .]
+
+    Options:
+      -n --name             Copies only the name of the file without the path.
+      -s --silent           Do not print anything to STDOUT.
+      -h --help             Print's this help documentation.
+    "
+}
+
+NAME_ONLY="false"
+SILENT="false"
+
+while getopts nehs-: OPT; do
+    if [ "$OPT" = "-" ]; then
+        OPT="${OPTARG%%=*}"
+        OPTARG="${OPTARG#"$OPT"}"
+        OPTARG="${OPTARG#=}"
+    fi
+
+    case "$OPT" in
+        n | name)
+            NAME_ONLY="true"
+            ;;
+        s | silent)
+            SILENT="true"
+            ;;
+        h | help)
+            print_documentation
+            ;;
+    esac
+done
+
+shift $((OPTIND-1))
+
+if [ "$#" -lt 1 ]; then
+    print_documentation
+fi
+
+if [ "$#" -gt 1 ]; then
+    echo "copypath does not support multiple files yet"
+fi
+
+RESULT=""
+
+if [ "$NAME_ONLY" = "true" ]; then
+    RESULT=$(basename "$1")
+else
+    RESULT=$(/bin/realpath "$1")
+fi
+
+if [ "$SILENT" = "false" ]; then
+    echo "Copied $RESULT into clipboard"
+fi
+
+$(echo $RESULT | pbcopy)
